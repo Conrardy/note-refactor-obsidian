@@ -65,7 +65,7 @@ export default class NRDoc {
     let contentToInsert = transclude + link;
 
     // Ajout : extraire les props du contenu original
-    const props = this.extractFrontMatterProps(originalContent);
+    const props = this.extractFrontMatterProps(doc.getValue());
     
     contentToInsert = this.templatedContent(
       contentToInsert,
@@ -108,7 +108,7 @@ export default class NRDoc {
     newNoteLink: string,
     newNotePath: string,
     newNoteContent: string,
-    props?: Record<string, string>
+    props: Record<string, string>
   ): string {
     if (template === undefined || template === "") {
       return input;
@@ -128,10 +128,10 @@ export default class NRDoc {
     );
     output = this.templatePlaceholders.newNotePath.replace(output, newNotePath);
     // Remplacement des {{prop[KEY]}}
-    const propObj = props || this.lastExtractedProps;
+    const propObj = props;
     output = output.replace(
       /\{\{prop\[(.+?)\]\}\}/g,
-      (_, key) => propObj[key] ?? ""
+      (_, key) => propObj[key] ?? key
     );
     return output;
   }

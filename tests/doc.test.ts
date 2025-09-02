@@ -221,10 +221,25 @@ function lastLine(input: string): string {
 describe("NRDoc.replaceContent", () => {
   it("insère les props front-matter dans le template", async () => {
     // Mock Editor
+    const fullContent = `
+# Metadata
+Auteur : [[Morgan Housel]]
+Source : La Psychologie De lArgent
+Category: #books
+***
+## First note
+
+Le vrai succès, c'est de sortir d'une course effrénée pour moduler ses activités pour avoir l'esprit tranquille.
+
+## Second Note
+
+Charlie Munger l'a bien dit : « La première règle de la composition est de ne jamais l'interrompre inutilement. 
+`;
+
     const mockEditor = {
       getCursor: jest.fn(() => ({ line: 0, ch: 0 })),
       offsetToPos: jest.fn((offset) => ({ line: 0, ch: 0 })),
-      getValue: jest.fn(() => ""),
+      getValue: jest.fn(() => fullContent), // <-- retourne le contenu complet
       replaceRange: jest.fn(),
       replaceSelection: jest.fn(),
       setValue: jest.fn(),
@@ -237,7 +252,9 @@ describe("NRDoc.replaceContent", () => {
       getMarkdownFiles: jest.fn(() => [{ path: "test.md" }]),
     } as unknown as import("obsidian").Vault;
 
-    const mockFileManager = { generateMarkdownLink: jest.fn(() => "[[test]]") } as unknown as import("obsidian").FileManager;
+    const mockFileManager = {
+      generateMarkdownLink: jest.fn(() => "[[test]]"),
+    } as unknown as import("obsidian").FileManager;
 
     // Settings et template
     const settings = new NoteRefactorSettings();
@@ -246,11 +263,17 @@ describe("NRDoc.replaceContent", () => {
 
     const doc = new NRDoc(settings, mockVault, mockFileManager);
 
-    const originalContent = `Auteur: John Doe\nSource: Book Title\n***\nContenu`;
-    const content = "Contenu";
+    const originalContent = `## First note
+
+Le vrai succès, c'est de sortir d'une course effrénée pour moduler ses activités pour avoir l'esprit tranquille.
+`;
+    const content = `Le vrai succès, c'est de sortir d'une course effrénée pour moduler ses activités pour avoir l'esprit tranquille.`;
     const fileName = "test";
     const filePath = "test.md";
-    const currentNote = { path: "test.md", basename: "test" } as unknown as import("obsidian").TFile;
+    const currentNote = {
+      path: "test.md",
+      basename: "test",
+    } as unknown as import("obsidian").TFile;
 
     await doc.replaceContent(
       fileName,
@@ -259,17 +282,17 @@ describe("NRDoc.replaceContent", () => {
       currentNote,
       content,
       originalContent,
-      "split"
+      "replace-headings"
     );
 
     // Vérifie que le contenu inséré contient les props
     expect(mockEditor.replaceRange).toHaveBeenCalledWith(
-      expect.stringContaining("Source : Book Title"),
+      expect.stringContaining("Source : La Psychologie De lArgent"),
       expect.anything(),
       expect.anything()
     );
     expect(mockEditor.replaceRange).toHaveBeenCalledWith(
-      expect.stringContaining("Auteur : John Doe"),
+      expect.stringContaining("Auteur : [[Morgan Housel]]"),
       expect.anything(),
       expect.anything()
     );
